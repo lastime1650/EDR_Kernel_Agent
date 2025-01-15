@@ -5,7 +5,7 @@ This repository is Kernel based Agent program for EDR(Endpoint Detection Respons
 ```
   1차 개발완료!
 ```
-PLEASE Read it! -> [https://cominam-documents.gitbook.io/cominam-edr/agent/windows-os](https://cominam-documents.gitbook.io/cominam-edr/agent/windows-os)
+Detail Description here! -> [https://cominam-documents.gitbook.io/cominam-edr/agent/windows-os](https://cominam-documents.gitbook.io/cominam-edr/agent/windows-os)
 <br>
 
 ## For a Linux
