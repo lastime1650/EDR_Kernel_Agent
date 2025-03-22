@@ -32,5 +32,9 @@ BOOLEAN Remove_Process_Reponse_Data(PCHAR SHA256, ProcessResponseData* opt_outpu
 BOOLEAN is_exist_Process_Response_Data(PCHAR SHA256); // 차단 목록 확인 용
 
 
+
+BOOLEAN Get_All_Response_list_Process_Response_Data__with_alloc(PDynamicData* output_start_buffer, PDynamicData* output_current_buffer); // 연결리스트 반환을 위해 복제하여 반환
+
+
 VOID Print_Process_Response_Data_Nodes();
 #endif

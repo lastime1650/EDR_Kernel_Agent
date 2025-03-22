@@ -3,6 +3,7 @@
 PFLT_FILTER gFilterHandle = NULL;
 
 const FLT_OPERATION_REGISTRATION Callback_s[] = {
+    /*
     { IRP_MJ_CREATE, 0, Pre_filter_Handler, NULL },
     { IRP_MJ_CREATE_NAMED_PIPE, 0, Pre_filter_Handler, NULL },
     { IRP_MJ_CLOSE, 0, Pre_filter_Handler, NULL },
@@ -31,6 +32,35 @@ const FLT_OPERATION_REGISTRATION Callback_s[] = {
     { IRP_MJ_QUERY_QUOTA, 0, Pre_filter_Handler, NULL },
     { IRP_MJ_SET_QUOTA, 0, Pre_filter_Handler, NULL },
     { IRP_MJ_PNP, 0, Pre_filter_Handler, NULL },
+    */
+    { IRP_MJ_CREATE, 0, PRE_filter_Handler, POST_filter_Handler },
+{ IRP_MJ_CREATE_NAMED_PIPE, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_CLOSE, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_READ, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_WRITE, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_QUERY_INFORMATION, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_SET_INFORMATION, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_QUERY_EA, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_SET_EA, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_FLUSH_BUFFERS, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_QUERY_VOLUME_INFORMATION, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_SET_VOLUME_INFORMATION, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_DIRECTORY_CONTROL, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_FILE_SYSTEM_CONTROL, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_DEVICE_CONTROL, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_INTERNAL_DEVICE_CONTROL, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_SHUTDOWN, 0, NULL, NULL }, // No post-operation callback
+{ IRP_MJ_LOCK_CONTROL, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_CLEANUP, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_CREATE_MAILSLOT, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_QUERY_SECURITY, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_SET_SECURITY, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_POWER, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_SYSTEM_CONTROL, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_DEVICE_CHANGE, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_QUERY_QUOTA, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_SET_QUOTA, 0, NULL, POST_filter_Handler },
+{ IRP_MJ_PNP, 0, NULL, POST_filter_Handler },
     { IRP_MJ_OPERATION_END } // Array termination
 };
 

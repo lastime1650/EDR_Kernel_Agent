@@ -149,7 +149,7 @@ NTSTATUS Query_Running_Processes__(
 			// 1. 파일크기 가 같은지 부터 확인.
 			ULONG32 got_file_size = 0;
 			DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, " {got_file_size} -> %lu \n", got_file_size);
-			if (get_file_size(NULL, &current_pid, &got_file_size) && ( Input_info->FIle_Size == got_file_size ) ) {
+			if (get_file_size(NULL, &current_pid, &got_file_size, TRUE) && ( Input_info->FIle_Size == got_file_size ) ) {
 				// 2. SHA256구하여 차단 시도. ( 명백히 )
 				// 
 				// 강제 종료 요구한 경우 종료

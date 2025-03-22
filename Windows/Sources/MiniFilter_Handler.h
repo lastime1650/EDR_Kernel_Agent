@@ -31,10 +31,18 @@ typedef enum File_Behavior {
 
 
 FLT_PREOP_CALLBACK_STATUS
-Pre_filter_Handler(
+PRE_filter_Handler(
     PFLT_CALLBACK_DATA Data,
     PCFLT_RELATED_OBJECTS FltObjects,
     PVOID* CompletionContext
+);
+
+
+FLT_POSTOP_CALLBACK_STATUS POST_filter_Handler(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_opt_ PVOID CompletionContext,
+    _In_ FLT_POST_OPERATION_FLAGS Flags
 );
 
 

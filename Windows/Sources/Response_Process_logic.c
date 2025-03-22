@@ -14,7 +14,7 @@ BOOLEAN Check_Process_Response(HANDLE* pid) { // 차단하기 전 검증
 
 	// 먼저 얻은 PID의 파일 크기를 계산한다.
 	ULONG32 EXE_SIZE = 0;
-	if (!get_file_size(NULL, pid, &EXE_SIZE))
+	if (!get_file_size(NULL, pid, &EXE_SIZE, TRUE))
 		return FALSE;
 
 
@@ -213,4 +213,42 @@ BOOLEAN is_exist_Process_Response_Data(PCHAR SHA256) { // 차단 목록 존재 확인 용
 
 	return FALSE;
 
+}
+
+
+///
+BOOLEAN Get_All_Response_list_Process_Response_Data__with_alloc(PDynamicData* output_start_buffer, PDynamicData* output_current_buffer) { // 할당 과 데이터 반환
+
+	if (Process_Response_Start_Node_Address == NULL || output_start_buffer == NULL || output_current_buffer == NULL)
+		return FALSE;
+
+	K_object_init_check_also_lock_ifyouwant(&mutex_process_response, TRUE); // 상호배제
+
+
+	// 시작점에 식별 문자열 넣기
+	UCHAR unq[] = "process";
+	*output_start_buffer = CreateDynamicData((PUCHAR)&unq, (ULONG32)strlen((PCHAR)unq)); // 1. 
+
+
+	PDynamicData current_output_buffer = *output_start_buffer;
+
+	ProcessResponseData current = Process_Response_Start_Node_Address;
+	while (current) {
+
+		ProcessResponse_Struct* processresponse_data = (ProcessResponse_Struct*)current->Data;
+
+
+		current_output_buffer = AppendDynamicData(current_output_buffer, (PUCHAR)&processresponse_data->SHA256, sizeof(processresponse_data->SHA256)); // 2.
+		current_output_buffer = AppendDynamicData(current_output_buffer, (PUCHAR)&processresponse_data->FILE_SIZE, sizeof(processresponse_data->FILE_SIZE)); // 3.
+
+
+		current = (ProcessResponseData)current->Next_Addr;
+	}
+
+	current_output_buffer = AppendDynamicData(current_output_buffer, (PUCHAR)"end", sizeof("end") - 1); // 4.
+
+	*output_current_buffer = current_output_buffer;
+
+	K_object_lock_Release(&mutex_process_response);
+	return TRUE;
 }

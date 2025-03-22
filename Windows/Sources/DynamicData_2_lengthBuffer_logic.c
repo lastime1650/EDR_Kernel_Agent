@@ -200,18 +200,28 @@ VOID Dyn_2_lenBuff(Pmover in_parameter) {
 		PDynamicData current = in_parameter->start_node;
 
 		/*꺼내기*/
-		PWCH File_Path_W = (PWCH)current->Data;																 // 1.
-		ANSI_STRING File_Path = { 0, };
-		PWCH_to_ANSI(&File_Path, File_Path_W);
-		Change_Node_Data(current, (PUCHAR)File_Path.Buffer, File_Path.MaximumLength - 1);
-		PWCH_to_ANSI_release(&File_Path);
+		PWCH File_Path_WCH = (PWCH)current->Data;																 // 1.
+
+		UNICODE_STRING File_Path_W = { 0, };
+		RtlInitUnicodeString(&File_Path_W, File_Path_WCH);
+
+		ANSI_STRING File_Path_A = { 0, };
+		UNICODE_to_ANSI(&File_Path_A, &File_Path_W);
+		//ANSI_STRING File_Path = { 0, };
+		//PWCH_to_ANSI(&File_Path, File_Path_W);
+		Change_Node_Data(current, (PUCHAR)File_Path_A.Buffer, File_Path_A.MaximumLength - 1);
+		UNICODE_to_ANSI_release(&File_Path_A);
 		SIZE += append_size(current->Size);
 		current = (PDynamicData)current->Next_Addr;
 
-		PCHAR File_Behavior = (PCHAR)current->Data;															// 2.
+		PULONG32 File_SIze = (PULONG32)current->Data;															// 2. 파일 길이
 		SIZE += append_size(current->Size);
+		current = (PDynamicData)current->Next_Addr;
+		File_SIze;
 
-		//SIZE += append_Node_pid_path(current, &current, in_parameter->PID);								// 3.
+		PCHAR File_Behavior = (PCHAR)current->Data;															// 3.
+		SIZE += append_size(current->Size);
+							
 
 		/* File_Behavior에 따라 노드 수가 '동적'임 */
 		// [1] Rename시 노드가 1개 추가됨 
@@ -224,15 +234,26 @@ VOID Dyn_2_lenBuff(Pmover in_parameter) {
 				Change_Node_Data(current, (PUCHAR)Rename_File_Path.Buffer, Rename_File_Path.MaximumLength - 1);
 				PWCH_to_ANSI_release(&Rename_File_Path);
 				SIZE += append_size(current->Size);
+				
 			}
 		}
+		//current = (PDynamicData)current->Next_Addr;
 
+		// 파일 사이즈 ( 경로 기반 )																		// 4. 
+		/*
+		ULONG32 File_Size = 0;
+		if (get_file_size(&File_Path_W, NULL, &File_Size, FALSE)) {
+			SIZE += append_size( sizeof(File_Size) );
+			current = AppendDynamicData(current, (PUCHAR)&File_Size, sizeof(File_Size));
+		}
+		*/
+		
 		
 
-		// 파일 바이너리 가져오기 시도
+		//* 파일 바이너리 가져오기 시도 ( 파일 용량 제한을 걸어야 하거나 COre-server 에서 요청하거나? ) *//
 
 
-		File_Path; File_Behavior;
+		//File_Path;  File_Behavior; File_SIze; // ( Rename인 경우 "FILE_RENAME_FILE_PATH" 노드 추가하여 총 4개이상
 		// Rename_File_Path_W
 		break;
 	}
@@ -293,7 +314,7 @@ VOID Dyn_2_lenBuff(Pmover in_parameter) {
 	}
 
 
-	// 초반 절대 깅리 구하기
+	// 초반 길이 구하기
 	SIZE += Head;// sizeof(in_parameter->cmd);					// 명령
 	SIZE += LENGTH_MAX_BYTE_NUM + sizeof(in_parameter->PID);	// PID
 	SIZE += LENGTH_MAX_BYTE_NUM + Time_Length() - 1;			// 타임스탬프 null제외 길이

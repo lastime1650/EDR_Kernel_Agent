@@ -119,6 +119,7 @@
   <ItemGroup>
     <ClCompile Include="API_Loader_logic.c" />
     <ClCompile Include="File_io_logic.c" />
+    <ClCompile Include="Get_All_Response_logic.c" />
     <ClCompile Include="Image_Load_Event_logic.c" />
     <ClCompile Include="is_system_pid_logic.c" />
     <ClCompile Include="converter_String_logic.c" />
@@ -166,6 +167,7 @@
     <ClInclude Include="API_Loader.h" />
     <ClInclude Include="API_structs.h" />
     <ClInclude Include="File_io.h" />
+    <ClInclude Include="Get_All_Response.h" />
     <ClInclude Include="Image_Load_Event.h" />
     <ClInclude Include="is_system_pid.h" />
     <ClInclude Include="converter_string.h" />

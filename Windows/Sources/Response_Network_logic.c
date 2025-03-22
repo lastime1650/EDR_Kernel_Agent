@@ -150,3 +150,38 @@ VOID Print_Network_Response_Data_Nodes() {
 
 	return;
 }
+
+
+//
+///
+BOOLEAN Get_All_Response_list_Network_Response_Data__with_alloc(PDynamicData* output_start_buffer, PDynamicData* output_current_buffer) { // 할당 과 데이터 반환
+
+	if (Network_Response_Start_Node_Address == NULL || output_start_buffer == NULL || output_current_buffer == NULL)
+		return FALSE;
+
+	K_object_init_check_also_lock_ifyouwant(&mutex_for_a_networkresponse, TRUE); // 상호배제
+
+
+	// 시작점에 식별 문자열 넣기
+	CHAR unq[] = "network";
+	*output_start_buffer = CreateDynamicData((PUCHAR)&unq, (ULONG32)strlen((PCHAR)unq)); // 1. 
+
+	PDynamicData current_output_buffer = *output_start_buffer;
+
+	NetworkResponseData current = Network_Response_Start_Node_Address;
+	while (current) {
+
+
+		current_output_buffer = AppendDynamicData(current_output_buffer, current->Data, (ULONG32)strlen((PCHAR)current->Data) ); // 2.
+
+
+		current = (NetworkResponseData)current->Next_Addr;
+	}
+
+	current_output_buffer = AppendDynamicData(current_output_buffer, (PUCHAR)"end", sizeof("end") - 1); // 3
+
+	*output_current_buffer = current_output_buffer;
+
+	K_object_lock_Release(&mutex_for_a_networkresponse);
+	return TRUE;
+}

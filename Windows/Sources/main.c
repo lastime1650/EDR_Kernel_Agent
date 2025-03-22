@@ -14,8 +14,9 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT driverobject, PUNICODE_STRING registry) {
 
 	NTSTATUS status = STATUS_SUCCESS;
 
+
 	// [1/6] :: OS 버전 체크
-	status = OS_Version_Checker();
+	status = OS_Version_Checker(NULL);
 	if (status != STATUS_SUCCESS)
 		return status;
 

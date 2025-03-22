@@ -194,3 +194,40 @@ VOID Print_File_Response_Data_Nodes() {
 
 	return;
 }
+
+///
+BOOLEAN Get_All_Response_list_File_Response_Data__with_alloc(PDynamicData* output_start_buffer, PDynamicData* output_current_buffer) { // 할당 과 데이터 반환
+
+	if (File_Response_Start_Node_Address == NULL || output_start_buffer == NULL || output_current_buffer == NULL)
+		return FALSE;
+
+	K_object_init_check_also_lock_ifyouwant(&mutex_responsefile, TRUE); // 상호배제
+
+
+	// 시작점에 식별 문자열 넣기
+	UCHAR unq[] = "file_system";
+	*output_start_buffer = CreateDynamicData((PUCHAR)&unq, (ULONG32)strlen((PCHAR)unq)); // 1. 
+
+
+	PDynamicData current_output_buffer = *output_start_buffer;
+
+	FileResponseData current = File_Response_Start_Node_Address;
+	while (current) {
+
+		FileResponse_Struct* file_response_data = (FileResponse_Struct*)current->Data;
+
+
+		current_output_buffer = AppendDynamicData(current_output_buffer, (PUCHAR)&file_response_data->SHA256, sizeof(file_response_data->SHA256)); // 2.
+		current_output_buffer = AppendDynamicData(current_output_buffer, (PUCHAR)&file_response_data->File_Size, sizeof(file_response_data->File_Size)); // 3.
+
+
+		current = (FileResponseData)current->Next_Addr;
+	}
+
+	current_output_buffer = AppendDynamicData(current_output_buffer, (PUCHAR)"end", sizeof("end")-1); // 4.
+
+	*output_current_buffer = current_output_buffer;
+
+	K_object_lock_Release(&mutex_responsefile);
+	return TRUE;
+}

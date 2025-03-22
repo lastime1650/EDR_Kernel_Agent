@@ -9,7 +9,8 @@
  * @return Windows 10 이상이면 STATUS_SUCCESS를, 그렇지 않으면 STATUS_NOT_SUPPORTED를 반환합니다.
  *         RtlGetVersion 함수 호출이 실패하면 해당 실패 상태를 반환합니다.
  */
-NTSTATUS OS_Version_Checker() {
+NTSTATUS OS_Version_Checker(PUCHAR* opt_output_os_info) {
+
     RTL_OSVERSIONINFOW osVersionInfo = { 0 };
     osVersionInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
 
@@ -19,8 +20,22 @@ NTSTATUS OS_Version_Checker() {
         return status;
     }
 
+    
+
     // Windows 10 이상인지 확인합니다.
     if (osVersionInfo.dwMajorVersion >= WINDOWS_10_MAJOR_VERSION) {
+
+        if (opt_output_os_info) 
+            Output_OS_info_with_alloc(
+                opt_output_os_info,
+                osVersionInfo.dwMajorVersion,
+                osVersionInfo.dwMinorVersion,
+                osVersionInfo.dwBuildNumber,
+                osVersionInfo.dwOSVersionInfoSize,
+                osVersionInfo.dwPlatformId
+            );
+
+
         return STATUS_SUCCESS;
     }
     else {
@@ -51,4 +66,60 @@ NTSTATUS Get_OS_Versions(OSVERSIONINFOW* output) {
     }
 
     return STATUS_SUCCESS;
+}
+
+#pragma warning(disable:4996)
+#include <ntstrsafe.h>
+#define alloc_tag 'OSin'
+NTSTATUS Output_OS_info_with_alloc(PUCHAR* output_ansi, ULONG MajorVersion, ULONG MinorVersion, ULONG BuildVersion, ULONG OSVersionInfoSize, ULONG PlatformId) {
+    if (!output_ansi)
+        return STATUS_INVALID_PARAMETER_1;
+
+
+    CHAR arch[3] = { 0, };
+
+#ifdef _M_AMD64
+    RtlCopyMemory(arch, "64", sizeof(arch));
+#elif defined(_M_X64)
+    RtlCopyMemory(arch, "64", sizeof(arch));
+#elif defined(_WIN64)
+    RtlCopyMemory(arch, "64", sizeof(arch));
+#elif defined(_WIN32)
+    RtlCopyMemory(arch, "32", sizeof(arch));
+#elif defined(_M_IX86)
+    RtlCopyMemory(arch, "32", sizeof(arch));
+#else
+    return STATUS_NOT_SUPPORTED;
+#endif
+
+
+    *output_ansi = ExAllocatePoolWithTag(NonPagedPool, 256, alloc_tag);
+    if (!*output_ansi)
+        return STATUS_MEMORY_NOT_ALLOCATED;
+
+    memset(*output_ansi, 0, 128);
+
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+    status = RtlStringCbPrintfA(
+        (NTSTRSAFE_PSTR)*output_ansi,
+        256, // 할당된 버퍼 크기 (바이트)
+        "Windows(x%s) %lu.%lu.%lu.%lu.%lu",
+        arch,
+        MajorVersion,
+        MinorVersion,
+        BuildVersion,
+        OSVersionInfoSize,
+        PlatformId
+    );
+
+    
+
+    
+
+    return status;
+}
+VOID OS_info_free(PUCHAR _ansi) {
+    if (_ansi)
+        ExFreePoolWithTag(_ansi, alloc_tag);
 }

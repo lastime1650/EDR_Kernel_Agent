@@ -24,6 +24,7 @@ BOOLEAN Append_Network_Response_Data(PCHAR RemoteIP, NetworkResponseData* opt_ou
 BOOLEAN Remove_Networks_Reponse_Data(PCHAR RemoteIP, NetworkResponseData* opt_output_start_node); // 차단 목록 제거 ( 1개씩 )
 BOOLEAN is_exist_Network_Response_Data(PCHAR RemoteIP, ULONG32 RemoteIP_str_len_with_null); // 차단 목록 확인 + 차단 여부 용
 
+BOOLEAN Get_All_Response_list_Network_Response_Data__with_alloc(PDynamicData* output_start_buffer, PDynamicData* output_current_buffer);
 
 VOID Print_Network_Response_Data_Nodes();
 

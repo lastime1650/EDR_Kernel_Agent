@@ -29,6 +29,7 @@ BOOLEAN Append_File_Response_Data(PCHAR SHA256, ULONG32 File_SIze, FileResponseD
 BOOLEAN Remove_File_Reponse_Data(PCHAR SHA256, FileResponseData* opt_output_start_node); // 차단 목록 제거 ( 1개씩 )
 BOOLEAN is_exist_File_Response_Data(PCHAR SHA256); // 차단 목록 확인
 
+BOOLEAN Get_All_Response_list_File_Response_Data__with_alloc(PDynamicData* output_start_buffer, PDynamicData* output_current_buffer); //  연결 노드 데이터 싹다 반환
 
 VOID Print_File_Response_Data_Nodes();
 

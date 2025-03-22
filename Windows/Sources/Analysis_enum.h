@@ -50,6 +50,7 @@ typedef enum Analysis_Command {
 
 	Response_File = 10730,
 	Response_File_Remove = 10731,
+	get_Response_list = 10799, // 현재 차단 등록된 것들 모두 가져오기
 
 
 // 분석서버 -> 커널 ( 2 xx xx )

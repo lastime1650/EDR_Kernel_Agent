@@ -182,6 +182,9 @@
     <Filter Include="Source Files\차단\파일">
       <UniqueIdentifier>{aed64779-ae79-4eca-a57d-a6b32930c995}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EDR_간_세션\데이터통신\Response\_output_all">
+      <UniqueIdentifier>{cd58348e-4cd2-44ed-a86a-f0a94a7799b9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="AI_EDR_AGENT.inf">
@@ -314,6 +317,9 @@
     </ClCompile>
     <ClCompile Include="PROCESS_Request_File_Response_logic.c">
       <Filter>Source Files\EDR_간_세션\데이터통신\Response\File</Filter>
+    </ClCompile>
+    <ClCompile Include="Get_All_Response_logic.c">
+      <Filter>Source Files\EDR_간_세션\데이터통신\Response\_output_all</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -457,6 +463,9 @@
     </ClInclude>
     <ClInclude Include="PROCESS_Request_File_Response.h">
       <Filter>Source Files\EDR_간_세션\데이터통신\Response\File</Filter>
+    </ClInclude>
+    <ClInclude Include="Get_All_Response.h">
+      <Filter>Source Files\EDR_간_세션\데이터통신\Response\_output_all</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

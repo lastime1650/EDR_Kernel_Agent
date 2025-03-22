@@ -25,6 +25,7 @@ BOOLEAN Init_return__edr_data(
     PFLT_FILE_NAME_INFORMATION input_file_info,
 
     File_Behavior file_behavior,
+    ULONG32 file_size,
 
     PDynamicData* output_start_address_node,
     PDynamicData* output_current_address_node
@@ -53,33 +54,47 @@ VOID Flt_Get_File_Binary__Release(PUCHAR input_allocated_Buffer);
 #include "WorkItem_job.h"
 #include "Response_File.h"
 #include "File_io.h"
-FLT_PREOP_CALLBACK_STATUS
+/*FLT_PREOP_CALLBACK_STATUS
 Pre_filter_Handler(
     PFLT_CALLBACK_DATA Data,
     PCFLT_RELATED_OBJECTS FltObjects,
     PVOID* CompletionContext
+) */
+
+
+FLT_POSTOP_CALLBACK_STATUS POST_filter_Handler(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_opt_ PVOID CompletionContext,
+    _In_ FLT_POST_OPERATION_FLAGS Flags
 ) {
     UNREFERENCED_PARAMETER(FltObjects);
     UNREFERENCED_PARAMETER(CompletionContext);
+    UNREFERENCED_PARAMETER(Flags);
 
     // 시스템관련 프로세스인지 확인
     PEPROCESS Process_info = IoThreadToProcess(Data->Thread);
     HANDLE ProcessId = PsGetProcessId(Process_info);
     
     if (ProcessId < (HANDLE)100)
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        //return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        return FLT_POSTOP_FINISHED_PROCESSING;
 
     if (Is_it_System_Process(ProcessId)) 
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
-        
+        //return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        return FLT_POSTOP_FINISHED_PROCESSING;
 
 
     // 파일인지 확인
     PFLT_FILE_NAME_INFORMATION fileNameInfo = NULL;
     if (Is_File_with_Get_File_Info(Data, &fileNameInfo) == FALSE) {
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        //return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        return FLT_POSTOP_FINISHED_PROCESSING;
     }
-    
+
+    ULONG32 file_size = 0;
+    Flt_Get_File_Size(Data, &file_size);
+    //DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "파일 크기 -> %lu \n", file_size);
 
     /*
         서버에 전달하기 위한 노드 준비
@@ -93,7 +108,7 @@ Pre_filter_Handler(
     case IRP_MJ_CREATE:
     {
 
-
+        
 
         /*
             [사전 BLOCK 처리]
@@ -101,12 +116,13 @@ Pre_filter_Handler(
         if (File_Response_Start_Node_Address != NULL) {
 
             ULONG32 File_Size = 0;
-            if (get_file_size(&fileNameInfo->Name,NULL, &File_Size)&& File_Size != 0) {// 해당 파일의 사이즈 가져오기
+            if (get_file_size(&fileNameInfo->Name,NULL, &File_Size, TRUE)&& File_Size != 0) {// 해당 파일의 사이즈 가져오기
                 if (is_same_check(&fileNameInfo->Name, File_Size)) { // 차단 여부 결정 
                     //DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "flt 차단 \n");
                     Data->IoStatus.Status = STATUS_ACCESS_DENIED;
                     Data->IoStatus.Information = 0;
-                    return FLT_PREOP_COMPLETE; // Block
+                    //return FLT_PREOP_COMPLETE; // Block
+                    return FLT_POSTOP_FINISHED_PROCESSING;
                 }
             }
            // }
@@ -126,7 +142,7 @@ Pre_filter_Handler(
         if (Data->Iopb->Parameters.Create.Options & FILE_CREATE) {
             // 파일 생성
             //DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "미니필터 [PID]: %llu 파일 생성 %d \n", ProcessId, Data->Iopb->Parameters.Create.Options);
-            if (Init_return__edr_data(&ProcessId, fileNameInfo, Create, &Start_Addr, &Current_Addr) == TRUE) { // 이것은 한번더 테스트해야햄 
+            if (Init_return__edr_data(&ProcessId, fileNameInfo, Create, file_size, &Start_Addr, &Current_Addr) == TRUE) { // 이것은 한번더 테스트해야햄 
 
                 goto To_Server;
 
@@ -171,7 +187,7 @@ Pre_filter_Handler(
         if (share_filter_object->IsWriteMode) {
             //DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "미니필터 [PID]: %llu 파일 쓰기 모드 확인 \n", ProcessId);
 
-            if (Init_return__edr_data(&ProcessId, fileNameInfo, Write, &Start_Addr, &Current_Addr) == TRUE) {
+            if (Init_return__edr_data(&ProcessId, fileNameInfo, Write, file_size , &Start_Addr, &Current_Addr) == TRUE) {
                 
                 KeReleaseSpinLock(&share_filter_object->spinlock, oldIrql);
                 goto To_Server;
@@ -221,7 +237,7 @@ Pre_filter_Handler(
                 //RtlInitUnicodeString(&newFileName, renameInfo->FileName);
                 
                 // EDR server에넘길것
-                if (Init_return__edr_data(&ProcessId, fileNameInfo, Rename, &Start_Addr, &Current_Addr) == TRUE) {
+                if (Init_return__edr_data(&ProcessId, fileNameInfo, Rename, file_size, &Start_Addr, &Current_Addr) == TRUE) {
 
                     // 변경되는 이름 추가 ( PWCH )
                     Current_Addr = AppendDynamicData(Current_Addr, (PUCHAR)renameInfo->FileName, renameInfo->FileNameLength);
@@ -248,7 +264,7 @@ Pre_filter_Handler(
             PFILE_DISPOSITION_INFORMATION delnameInfo = (PFILE_DISPOSITION_INFORMATION)Data->Iopb->Parameters.SetFileInformation.InfoBuffer;
             if (delnameInfo->DeleteFile) {
                 // EDR server에넘길것
-                if (Init_return__edr_data(&ProcessId, fileNameInfo, Delete, &Start_Addr, &Current_Addr) == TRUE) {
+                if (Init_return__edr_data(&ProcessId, fileNameInfo, Delete, file_size, &Start_Addr, &Current_Addr) == TRUE) {
                     // 따로 뭐 없음. 현재 'fileNameInfo'에 표시하는 현재 파일명이 삭제 될 것임 
                     goto To_Server;
                 }
@@ -309,9 +325,72 @@ NOTHING_return:
     {
         // 정상 리턴
         FltReleaseFileNameInformation(fileNameInfo);
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        //return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        return FLT_POSTOP_FINISHED_PROCESSING;
     }
 }
+
+
+
+// PRE fix 핸들러
+FLT_PREOP_CALLBACK_STATUS
+PRE_filter_Handler(
+    PFLT_CALLBACK_DATA Data,
+    PCFLT_RELATED_OBJECTS FltObjects,
+    PVOID* CompletionContext
+) {
+    UNREFERENCED_PARAMETER(FltObjects);
+    UNREFERENCED_PARAMETER(CompletionContext);
+
+    // 파일인지 확인
+    PFLT_FILE_NAME_INFORMATION fileNameInfo = NULL;
+    if (Is_File_with_Get_File_Info(Data, &fileNameInfo) == FALSE) {
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
+
+    
+
+        if (Data->Iopb->MajorFunction == IRP_MJ_CREATE)
+        {
+            if (KeGetCurrentIrql() == PASSIVE_LEVEL) {
+                ULONG32 file_size = 0;
+                Flt_Get_File_Size(Data, &file_size);
+
+
+
+                /*
+                    [BLOCK 처리]
+                */
+
+                // 파일길이 얻기
+                if (file_size == 0) {
+                    ULONG32 tmp_size = 0;
+                    if (!get_file_size(&fileNameInfo->Name, NULL, &tmp_size, TRUE) || tmp_size == 0) {// 해당 파일의 사이즈 가져오기
+                        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+                    }
+                    file_size = tmp_size;
+                }
+
+                // 차단 시도
+                if (is_same_check(&fileNameInfo->Name, file_size)) { // 차단 여부 결정 
+                    //DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "flt 차단 \n");
+                    Data->IoStatus.Status = STATUS_ACCESS_DENIED;
+                    Data->IoStatus.Information = 0;
+                    return FLT_PREOP_COMPLETE; // Block
+                }
+
+
+            }
+            
+        }
+
+    
+
+    return FLT_PREOP_SUCCESS_NO_CALLBACK;
+}
+
+
+
 /*
     누수 발생 여부: 양호
 */
@@ -320,6 +399,8 @@ BOOLEAN Init_return__edr_data(
     PFLT_FILE_NAME_INFORMATION input_file_info,
 
     File_Behavior file_behavior,
+    
+    ULONG32 file_size,
 
     PDynamicData* output_start_address_node,
     PDynamicData* output_current_address_node
@@ -335,6 +416,8 @@ BOOLEAN Init_return__edr_data(
     *output_start_address_node = CreateDynamicData((PUCHAR)input_file_info->Name.Buffer, input_file_info->Name.MaximumLength);
     *output_current_address_node = *output_start_address_node;
 
+    // 파일 길이
+    *output_current_address_node = AppendDynamicData(*output_current_address_node, (PUCHAR)&file_size, sizeof(file_size));
 
     // [EDR-Server] Behavior - str 파일 행동
     switch (file_behavior) {
@@ -440,7 +523,7 @@ BOOLEAN Flt_Get_File_Size(
         return FALSE;
     }
 
-    DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Flt_Get_File_Size 파일 크기 구함 -> %lu \n", fileInfo.EndOfFile.QuadPart);
+    //DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Flt_Get_File_Size 파일 크기 구함 -> %lu \n", fileInfo.EndOfFile.QuadPart);
 
     *output_file_size = (ULONG32)fileInfo.EndOfFile.QuadPart;
     return TRUE;

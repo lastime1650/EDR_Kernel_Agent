@@ -63,7 +63,8 @@ BOOLEAN get_file_size(
     UNICODE_STRING* opt_file_path,
     HANDLE* opt_PID,
 
-    ULONG32* OUTPUT_knwon_file_size
+    ULONG32* OUTPUT_knwon_file_size,
+    BOOLEAN is_process // 프로세스 파일인가?
 );
 
 #endif

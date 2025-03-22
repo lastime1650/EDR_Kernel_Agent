@@ -6,7 +6,6 @@ K_EVENT_or_MUTEX_struct file_io__mutex = { NULL, K_MUTEX, FALSE }; // 외부 스레�
 
 NTSTATUS Create_FILE(PHANDLE File_handle, UNICODE_STRING Create_File_Path, POBJECT_ATTRIBUTES objAttr, PIO_STATUS_BLOCK ioStatusBlock, ACCESS_MASK Desired_access, ULONG ShareOption, ULONG CreateOption) {
 
-    NTSTATUS status = STATUS_SUCCESS;
 
     // 1. 매개변수 유효성 검증
     if (File_handle == NULL || Create_File_Path.Buffer == NULL || objAttr == NULL || ioStatusBlock == NULL) {
@@ -20,15 +19,15 @@ NTSTATUS Create_FILE(PHANDLE File_handle, UNICODE_STRING Create_File_Path, POBJE
         return STATUS_INVALID_PARAMETER;
     }
 
-    // 3. OBJECT_ATTRIBUTES 초기화
+    // 3. OBJECT_ATTRIBUTES 초기화 
     InitializeObjectAttributes(objAttr,
         &Create_File_Path,
         OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
         NULL, NULL);
 
     // 4. ZwCreateFile 호출 및 오류 처리
-    __try {
-        status = ZwCreateFile(File_handle,
+
+     return ZwCreateFile(File_handle,
             Desired_access,
             objAttr, ioStatusBlock, 0,
             FILE_ATTRIBUTE_NORMAL,
@@ -36,42 +35,6 @@ NTSTATUS Create_FILE(PHANDLE File_handle, UNICODE_STRING Create_File_Path, POBJE
             CreateOption,
             FILE_SYNCHRONOUS_IO_NONALERT,
             NULL, 0);
-
-        // 5. STATUS_INVALID_USER_BUFFER 오류 처리 (선택 사항)
-        //    ZwCreateFile에 전달되는 버퍼가 페이징 가능한 메모리에 있는 경우 ProbeForRead/Write 사용
-        //    이 예제에서는 objAttr, ioStatusBlock이 커널 메모리에 있다고 가정
-        //    Create_File_Path는 사용자 모드 주소일 수 있으므로 ProbeForRead 필요
-        //    ProbeForRead/Write는 성능 저하를 일으킬 수 있으므로 필요한 경우에만 사용
-        // if (status == STATUS_INVALID_USER_BUFFER) {
-        //     DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Create_FILE: STATUS_INVALID_USER_BUFFER, attempting to probe memory\n");
-        //     __try {
-        //         ProbeForRead(Create_File_Path.Buffer, Create_File_Path.Length, sizeof(WCHAR));
-        //         // objAttr, ioStatusBlock이 사용자 모드 주소라면 ProbeForRead/Write 필요
-        //         // ProbeForRead(objAttr, sizeof(OBJECT_ATTRIBUTES), sizeof(PVOID));
-        //         // ProbeForWrite(ioStatusBlock, sizeof(IO_STATUS_BLOCK), sizeof(ULONG));
-        //
-        //         // Probe 통과 후 ZwCreateFile 다시 호출
-        //         status = ZwCreateFile(File_handle,
-        //             Desired_access,
-        //             objAttr, ioStatusBlock, 0,
-        //             FILE_ATTRIBUTE_NORMAL,
-        //             ShareOption,
-        //             CreateOption,
-        //             FILE_SYNCHRONOUS_IO_NONALERT,
-        //             NULL, 0);
-        //     }
-        //     __except(EXCEPTION_EXECUTE_HANDLER) {
-        //         DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Create_FILE: ProbeForRead/Write failed\n");
-        //         status = GetExceptionCode();
-        //     }
-        // }
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Create_FILE: Exception occurred during ZwCreateFile\n");
-        status = GetExceptionCode();
-    }
-
-    return status;
 }
 
 NTSTATUS Open_FILE(PHANDLE File_handle, UNICODE_STRING Create_File_Path, POBJECT_ATTRIBUTES objAttr, PIO_STATUS_BLOCK ioStatusBlock, ACCESS_MASK Desired_access, ULONG ShareOption) {
@@ -329,28 +292,33 @@ BOOLEAN get_file_size(
     UNICODE_STRING* opt_file_path,
     HANDLE* opt_PID,
 
-    ULONG32* OUTPUT_knwon_file_size
+    ULONG32* OUTPUT_knwon_file_size,
+    BOOLEAN is_process
 ) {
     if (KeGetCurrentIrql() != PASSIVE_LEVEL && KeGetCurrentIrql() != APC_LEVEL)
         return FALSE;
 
     BOOLEAN output = TRUE;
 
-    // 0 PID를 얻은 경우, 파일의 경로를 추출한다.
-    if (opt_PID != NULL) {
-        HANDLE PID = *opt_PID;
-        // PID 에서 EXE 절대경로 얻기
-        if (Query_Process_info(PID, ProcessImageFileName, &opt_file_path) != STATUS_SUCCESS) {
-            return FALSE;
+    if (is_process) {
+        // 0 PID를 얻은 경우, 파일의 경로를 추출한다.
+        if (opt_PID != NULL) {
+            HANDLE PID = *opt_PID;
+            // PID 에서 EXE 절대경로 얻기
+            if (Query_Process_info(PID, ProcessImageFileName, &opt_file_path) != STATUS_SUCCESS) {
+                return FALSE;
+            }
+            // 성공
+           // DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, " [TEST]-get_file_size-Query_Process_info-성공 \n");
         }
-        // 성공
-       // DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, " [TEST]-get_file_size-Query_Process_info-성공 \n");
     }
+    
 
     // 1. 파일 정보 추출
     HANDLE filehandle = 0;
     OBJECT_ATTRIBUTES objAttr = { 0, };
     IO_STATUS_BLOCK ioStatusBlock = { 0, };
+    DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, " 파일사이즈를 구할 파일 --> %wZ \n", *opt_file_path);
     if (Create_FILE(&filehandle, *opt_file_path, &objAttr, &ioStatusBlock, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, FILE_OPEN) != STATUS_SUCCESS) {
         output = FALSE;
         if (opt_PID != NULL) {

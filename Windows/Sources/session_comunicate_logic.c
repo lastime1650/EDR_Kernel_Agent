@@ -21,6 +21,8 @@
 #include "PROCESS_Request_Process_Response.h"
 #include "PROCESS_Request_Network_Response.h"
 #include "PROCESS_Request_File_Response.h"
+
+#include "Get_All_Response.h"
 VOID Session_Communication(K_EVENT_or_MUTEX_struct* locked_Event) {
 	Delays(-1);
 
@@ -138,6 +140,12 @@ VOID Session_Communication(K_EVENT_or_MUTEX_struct* locked_Event) {
 				[0]: SHA256 ( ANSI ) // 이거 하나만
 			*/
 			PROCESS_Request_File_Response(parsed_recv_data, &Send_Data, &Send_Data_Size,TRUE);
+			break;
+		}
+		case get_Response_list:
+		{
+			/* 인자 없음 그냥 파일/프로세스/네트워크 차단 연결노드 모두 순회하여 반환하라. */
+			Get_All_Response_datas(&Send_Data, &Send_Data_Size);
 			break;
 		}
 		default:
