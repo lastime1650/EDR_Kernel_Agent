@@ -6,7 +6,7 @@ This repository is Kernel based Agent program for EDR(Endpoint Detection Respons
   1차 개발완료!
 
 ```
-Detail Description here! ->[https://app.gitbook.com/o/8WN65Gulb8fcfnXXB29z/s/Uo2CJJVRuvDDG45E6ktt/undefined-1/windows-kernel-driver](https://app.gitbook.com/o/8WN65Gulb8fcfnXXB29z/s/Uo2CJJVRuvDDG45E6ktt/undefined-1/windows-kernel-driver)
+Detail Description here! ->[https://cominam-documents.gitbook.io/ai-edr-system/undefined-1/windows-kernel-driver](https://cominam-documents.gitbook.io/ai-edr-system/undefined-1/windows-kernel-driver)
 <br>
 
 ## Linux
